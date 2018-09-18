@@ -1,6 +1,8 @@
 import { HandlerInput, RequestHandler } from "ask-sdk-core";
 import { Response } from "ask-sdk-model";
 import { LocalizedStrings } from "../helpers/LocalizedStrings";
+import { SkillAnimations } from "../helpers/SkillAnimations";
+import { SetLightDirectiveBuilder } from "../helpers/SetLightDirectiveBuilder";
 
 export class LaunchHandler implements RequestHandler {
     canHandle(handlerInput: HandlerInput): boolean {
@@ -17,6 +19,10 @@ export class LaunchHandler implements RequestHandler {
 
         return handlerInput.responseBuilder
             .speak(resp.speech)
-            .reprompt(resp.reprompt).getResponse();
+            .reprompt(resp.reprompt)
+            .addDirective(SetLightDirectiveBuilder.setLightOnButtonDown(SkillAnimations.buttonDown()))
+            .addDirective(SetLightDirectiveBuilder.setLightOnButtonDown(SkillAnimations.buttonUp()))
+            .addDirective(SetLightDirectiveBuilder.setLight(SkillAnimations.skillLaunch()))
+            .getResponse();
     }
 }

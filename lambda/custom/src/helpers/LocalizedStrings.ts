@@ -65,7 +65,7 @@ export module LocalizedStrings {
 
 const i = i18next.init({
     lng: "en",
-    debug: true,
+    debug: false,
     resources: {
         en: {
             translation: {
@@ -78,9 +78,9 @@ const i = i18next.init({
                 "rollcall_timeout_reprompt": "Do you want to retry?",
                 "rollcall_timeout_exit": "No response received. I'll exit for now.",
                 "rollcall_done_speech": "Ok, two buttons registered. I'll exit for now.",
-                "rollcall_start_speech": "Let's get going. We need two players. Please press two buttons.",
-                "rollcall_start_reprompt": "Press the two buttons you want to use to play the game.",
-                "rollcall_checkin": "Great. {{num}} to go!"
+                "rollcall_start_speech": "Let's get going. Press button one.",
+                "rollcall_start_reprompt": "Please press button one.",
+                "rollcall_checkin": "Great! {{num}} to go!"
             }
         }
     }

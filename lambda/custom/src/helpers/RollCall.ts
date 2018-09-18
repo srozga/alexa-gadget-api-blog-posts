@@ -1,6 +1,8 @@
 import { HandlerInput } from "ask-sdk-core";
 import { Response, interfaces, services } from "ask-sdk-model";
 import { LocalizedStrings } from "./LocalizedStrings";
+import { SkillAnimations } from "../helpers/SkillAnimations";
+import { SetLightDirectiveBuilder } from "../helpers/SetLightDirectiveBuilder";
 
 const numOfButtons = 2;
 
@@ -16,6 +18,7 @@ export module RollCall {
             .speak(resp.speech)
             .reprompt(resp.reprompt)
             .addDirective(createRollCallDirective(numOfButtons, 20000))
+            .addDirective(SetLightDirectiveBuilder.setLight(SkillAnimations.rollCallInitialized()))
             .getResponse();
     }
 
@@ -30,18 +33,32 @@ export module RollCall {
             if (complete) {
                 return handleDone(handlerInput, complete);
             } else {
-                return handleButtonCheckin(handlerInput);
+                return handleButtonCheckin(handlerInput, inputEvents);
             }
         }
     }
 
-    export function handleButtonCheckin(handlerInput: HandlerInput): Response {
+    export function handleButtonCheckin(handlerInput: HandlerInput, inputEvents: Array<services.gameEngine.InputHandlerEvent>): Response {
         const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
-        sessionAttr.rollcallButtonsCheckedIn++;
-        handlerInput.attributesManager.setSessionAttributes(sessionAttr);
 
+
+        const directives = inputEvents.map(ev => {
+            const gadgetIds = getGadgetIds(ev);
+            return SetLightDirectiveBuilder.setLight(SkillAnimations.rollCallButtonSelected(), gadgetIds);
+        });
+
+        sessionAttr.rollcallButtonsCheckedIn += directives.length;
+        handlerInput.attributesManager.setSessionAttributes(sessionAttr);
         const resp = LocalizedStrings.rollcall_checkin(numOfButtons - sessionAttr.rollcallButtonsCheckedIn);
-        return handlerInput.responseBuilder.speak(resp.speech).getResponse();
+
+        let temp = handlerInput.responseBuilder.speak(resp.speech);
+        directives.forEach(p => temp.addDirective(p));
+        return temp.getResponse();
+    }
+
+    function getGadgetIds(ev: services.gameEngine.InputHandlerEvent): string[] {
+        const btns = ev!.inputEvents!.map(p => { return p.gadgetId!; });
+        return btns;
     }
 
     export function handleDone(handlerInput: HandlerInput,
@@ -56,11 +73,16 @@ export module RollCall {
         sessionAttr.rollcallResult = btns;
         handlerInput.attributesManager.setSessionAttributes(sessionAttr);
 
+        const blackOutUnusedButtons = SetLightDirectiveBuilder.setLight(SkillAnimations.rollCallFinishedUnused());
+        const lightUpSelectedButtons = SetLightDirectiveBuilder.setLight(SkillAnimations.rollCallFinishedSelected(), btns.map(p => p.id!));
+
         console.log(`Registered buttons: \n${JSON.stringify(btns, null, 2)}`);
 
         const resp = LocalizedStrings.rollcall_done();
         return handlerInput.responseBuilder
             .speak(resp.speech)
+            .addDirective(blackOutUnusedButtons)
+            .addDirective(lightUpSelectedButtons)
             .withShouldEndSession(true)
             .getResponse();
     }
