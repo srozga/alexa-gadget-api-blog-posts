@@ -5,27 +5,36 @@ import { LocalizedStrings } from "../helpers/LocalizedStrings";
 import { WhackabuttonGame } from "../games/WhackabuttonGame";
 import { GameState } from "../games/GameState";
 
-export class InLaunchStateHandler implements RequestHandler {
+export class PostGameStateHandler implements RequestHandler {
     canHandle(handlerInput: HandlerInput): boolean {
         const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
-        return sessionAttr.inLaunch;
+        const issupportedintent = handlerInput.requestEnvelope.request.type === "IntentRequest"
+            && ["AMAZON.YesIntent",
+                "AMAZON.NoIntent",
+                "StartGameIntent",
+                "ScoreIntent"]
+                .some(p => p === (<IntentRequest>handlerInput.requestEnvelope.request).intent.name);
+        return sessionAttr.inPostGame && issupportedintent;
     }
 
     handle(handlerInput: HandlerInput): Response {
-        console.log("executing in launch state handler");
+        console.log("executing in post game state handler");
 
         if (handlerInput.requestEnvelope.request.type === "IntentRequest") {
             const req = handlerInput.requestEnvelope.request as IntentRequest;
             if (req.intent.name === "AMAZON.YesIntent" || req.intent.name === "StartGameIntent") {
+                GameState.deleteState(handlerInput);
                 const game = new WhackabuttonGame(handlerInput);
-                GameState.setInLaunchState(handlerInput, false);
+                GameState.setInPostGame(handlerInput, false);
                 return game.initialize();
             } else if (req.intent.name === "AMAZON.NoIntent") {
-                // exit
-                GameState.setInLaunchState(handlerInput, false);
+                GameState.deleteState(handlerInput);
+                GameState.setInPostGame(handlerInput, false);
                 return handlerInput.responseBuilder
                     .speak(LocalizedStrings.goodbye().speech)
                     .getResponse();
+            } else if(req.intent.name === "ScoreIntent") {
+                return new WhackabuttonGame(handlerInput).postGameSummary();
             }
         }
 

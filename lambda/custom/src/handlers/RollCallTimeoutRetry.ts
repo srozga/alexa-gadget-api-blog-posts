@@ -1,7 +1,7 @@
 import { HandlerInput, RequestHandler } from "ask-sdk-core";
 import { Response, IntentRequest } from "ask-sdk-model";
-import { RollCall } from "../helpers/RollCall";
 import { LocalizedStrings } from "../helpers/LocalizedStrings";
+import { GameState } from "../games/GameState";
 
 export class RollCallTimeoutRetryHandler implements RequestHandler {
     canHandle(handlerInput: HandlerInput): boolean {
@@ -15,9 +15,16 @@ export class RollCallTimeoutRetryHandler implements RequestHandler {
 
     handle(handlerInput: HandlerInput): Response {
         const intentRequest = handlerInput.requestEnvelope.request as IntentRequest;
+
+
         if (intentRequest) {
             if (intentRequest.intent.name === "AMAZON.YesIntent") {
-                return RollCall.initialize(handlerInput);
+                const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
+                const game = new GameState(sessionAttr.game);
+                const response = game.reinit(handlerInput);
+                sessionAttr.game = game;
+                handlerInput.attributesManager.setSessionAttributes(sessionAttr);
+                return response;
             } else if (intentRequest.intent.name === "AMAZON.NoIntent") {
                 const resp = LocalizedStrings.goodbye();
                 return handlerInput.responseBuilder

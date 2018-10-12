@@ -6,6 +6,7 @@ import { BuiltinAmazonStopHandler } from "./handlers/builtin/AMAZON.Stop";
 import { BuiltinAmazonYesNoHandler } from "./handlers/builtin/AMAZON.YesNo";
 import { LaunchHandler } from "./handlers/Launch";
 import { InLaunchStateHandler } from "./handlers/InLaunchState";
+import { InGameHandler } from "./handlers/InGameHandler";
 import { SessionEndedHandler } from "./handlers/SessionEndedRequst";
 import { RollCallHandler } from "./handlers/RollCall";
 import { RollCallTimeoutRetryHandler } from "./handlers/RollCallTimeoutRetry";
@@ -13,12 +14,15 @@ import { RollCallTimeoutRetryHandler } from "./handlers/RollCallTimeoutRetry";
 import { CustomErrorHandler } from "./handlers/Error";
 import { RequestLoggingInterceptor } from "./interceptors/RequestLogging";
 import { ResponseLoggingInterceptor } from "./interceptors/ResponseLogging";
+import { PostGameStateHandler } from "./handlers/PostGameState";
 
 function buildLambdaSkill(): any {
     return SkillBuilders.custom()
         .addRequestHandlers(
             new LaunchHandler(),
             new InLaunchStateHandler(),
+            new PostGameStateHandler(),
+            new InGameHandler(),
             new RollCallHandler(),
             new RollCallTimeoutRetryHandler(),
             new BuiltinAmazonCancelHandler(),

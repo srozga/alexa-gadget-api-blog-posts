@@ -3,17 +3,22 @@ import { Response, interfaces, services } from "ask-sdk-model";
 import { LocalizedStrings } from "./LocalizedStrings";
 import { SkillAnimations } from "../helpers/SkillAnimations";
 import { SetLightDirectiveBuilder } from "../helpers/SetLightDirectiveBuilder";
+import { GameState } from "../games/GameState";
 
-const numOfButtons = 2;
+
+export class GameButton {
+    constructor(public gadgetId: string, public name: string) { }
+}
 
 export module RollCall {
-    export function initialize(handlerInput: HandlerInput): Response {
+    export function initialize(handlerInput: HandlerInput, numOfButtons: number): Response {
         const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
         sessionAttr.inRollcall = true;
+        sessionAttr.numOfButtons = numOfButtons;
         sessionAttr.rollcallButtonsCheckedIn = 0;
         handlerInput.attributesManager.setSessionAttributes(sessionAttr);
 
-        const resp = LocalizedStrings.rollcall_start();
+        const resp = LocalizedStrings.rollcall_start(numOfButtons);
         return handlerInput.responseBuilder
             .speak(resp.speech)
             .reprompt(resp.reprompt)
@@ -27,7 +32,7 @@ export module RollCall {
         const inputEvents = input.events!;
 
         if (inputEvents.some(p => p.name === "failed")) {
-            return handleTimeoutOut(handlerInput);
+            return handleTimeout(handlerInput);
         } else {
             const complete = inputEvents.find(p => p.name === "complete");
             if (complete) {
@@ -49,7 +54,7 @@ export module RollCall {
 
         sessionAttr.rollcallButtonsCheckedIn += directives.length;
         handlerInput.attributesManager.setSessionAttributes(sessionAttr);
-        const resp = LocalizedStrings.rollcall_checkin(numOfButtons - sessionAttr.rollcallButtonsCheckedIn);
+        const resp = LocalizedStrings.rollcall_checkin(sessionAttr.numOfButtons - sessionAttr.rollcallButtonsCheckedIn);
 
         let temp = handlerInput.responseBuilder.speak(resp.speech);
         directives.forEach(p => temp.addDirective(p));
@@ -65,29 +70,27 @@ export module RollCall {
         complete: services.gameEngine.InputHandlerEvent): Response {
         const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
         clearSessionAttr(sessionAttr);
-        const btns = complete!.inputEvents!.map(p => { return { name: "", id: p.gadgetId }; });
-        for (let i = 0; i < btns.length; i++) {
-            btns[i].name = "btn" + (i + 1);
-        }
+        const btns = complete!.inputEvents!.map((p, i) => {
+            return new GameButton(p.gadgetId!, `btn${i + 1}`);
+        });
 
         sessionAttr.rollcallResult = btns;
         handlerInput.attributesManager.setSessionAttributes(sessionAttr);
 
         const blackOutUnusedButtons = SetLightDirectiveBuilder.setLight(SkillAnimations.rollCallFinishedUnused());
-        const lightUpSelectedButtons = SetLightDirectiveBuilder.setLight(SkillAnimations.rollCallFinishedSelected(), btns.map(p => p.id!));
+        const lightUpSelectedButtons = SetLightDirectiveBuilder.setLight(
+            SkillAnimations.rollCallFinishedSelected(), btns.map(p => p.gadgetId!));
 
         console.log(`Registered buttons: \n${JSON.stringify(btns, null, 2)}`);
 
-        const resp = LocalizedStrings.rollcall_done();
-        return handlerInput.responseBuilder
-            .speak(resp.speech)
+        const gameState = GameState.getGameState(handlerInput);
+        handlerInput.responseBuilder
             .addDirective(blackOutUnusedButtons)
-            .addDirective(lightUpSelectedButtons)
-            .withShouldEndSession(true)
-            .getResponse();
+            .addDirective(lightUpSelectedButtons);
+        return gameState.resumeGameFromRollcall(handlerInput);
     }
 
-    export function handleTimeoutOut(handlerInput: HandlerInput): Response {
+    export function handleTimeout(handlerInput: HandlerInput): Response {
         const resp = LocalizedStrings.rollcall_timedout();
         const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
         if (sessionAttr.rollcallTimeout) {

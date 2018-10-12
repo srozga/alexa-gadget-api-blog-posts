@@ -3,6 +3,7 @@ import { Response } from "ask-sdk-model";
 import { LocalizedStrings } from "../helpers/LocalizedStrings";
 import { SkillAnimations } from "../helpers/SkillAnimations";
 import { SetLightDirectiveBuilder } from "../helpers/SetLightDirectiveBuilder";
+import { GameState } from "../games/GameState";
 
 export class LaunchHandler implements RequestHandler {
     canHandle(handlerInput: HandlerInput): boolean {
@@ -11,9 +12,8 @@ export class LaunchHandler implements RequestHandler {
     }
 
     handle(handlerInput: HandlerInput): Response {
-        const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
-        sessionAttr.inLaunch = true;
-        handlerInput.attributesManager.setSessionAttributes(sessionAttr);
+        GameState.setInLaunchState(handlerInput, true);
+        GameState.deleteState(handlerInput);
 
         const resp = LocalizedStrings.welcome();
 

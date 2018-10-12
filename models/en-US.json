@@ -1,7 +1,7 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "my games",
+      "invocationName": "teddy's game",
       "types": [],
       "intents": [
         {
@@ -25,11 +25,17 @@
           "samples": []
         },
         {
-          "name": "HelloIntent",
+          "name": "ScoreIntent",
           "samples": [
-            "hello",
-            "say hello",
-            "say hello world"
+            "what was my last score",
+            "what score did I get"
+          ]
+        },
+        {
+          "name": "StartGameIntent",
+          "samples": [
+            "start game",
+            "let's get going"
           ]
         }
       ]
