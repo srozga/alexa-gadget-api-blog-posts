@@ -12,7 +12,7 @@ export class BuiltinAmazonStopHandler implements RequestHandler {
 
         return handlerInput.responseBuilder
             .speak(speechText)
-            .withSimpleCard("Hello World", speechText)
+            .withShouldEndSession(true)
             .getResponse();
     }
 }

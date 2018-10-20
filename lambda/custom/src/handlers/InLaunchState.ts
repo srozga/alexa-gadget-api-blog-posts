@@ -8,7 +8,10 @@ import { GameState } from "../games/GameState";
 export class InLaunchStateHandler implements RequestHandler {
     canHandle(handlerInput: HandlerInput): boolean {
         const sessionAttr = handlerInput.attributesManager.getSessionAttributes();
-        return sessionAttr.inLaunch;
+        return sessionAttr.inLaunch
+            && handlerInput.requestEnvelope.request.type === "IntentRequest"
+            && (handlerInput.requestEnvelope.request.intent.name === "AMAZON.YesIntent"
+                || handlerInput.requestEnvelope.request.intent.name === "AMAZON.NoIntent");
     }
 
     handle(handlerInput: HandlerInput): Response {

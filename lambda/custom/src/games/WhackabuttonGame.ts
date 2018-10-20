@@ -14,7 +14,7 @@ const WHACKABUTTON_NUM_OF_BUTTONS = 2;
 const MIN_TIME_TO_PRESS = 2500;
 const MAX_TIME_TO_PRESS = 10000;
 const TIMEOUT_EVENT_NAME = "failed";
-const GAME_DURATION_SECONDS = 5;
+const GAME_DURATION_SECONDS = 30;
 
 export class WhackabuttonGame implements IGameTurn {
     constructor(public handlerInput: HandlerInput) {
